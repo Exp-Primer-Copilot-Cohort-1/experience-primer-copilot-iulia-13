@@ -1,22 +1,57 @@
-//create web server
-const express = require('express');
-const router = express.Router();
-// import the comments controller
-const commentsCtrl = require('../controllers/comments');
-// import the middleware
-const auth = require('../middleware/auth');
-const multer = require('../middleware/multer-config');
+//Create web server
+var express = require('express');
+var app = express();
 
-// Routes
-// create a comment
-router.post('/create', auth, multer, commentsCtrl.createComment);
-// get all comments
-router.get('/', auth, commentsCtrl.getAllComments);
-// get one comment
-router.get('/:id', auth, commentsCtrl.getOneComment);
-// modify a comment
-router.put('/:id', auth, multer, commentsCtrl.modifyComment);
-// delete a comment
-router.delete('/:id', auth, commentsCtrl.deleteComment);
+//Handle POST request
+var bodyParser = require('body-parser');
+app.use(bodyParser.urlencoded({extended: false}));
 
-module.exports = router;
+//Handle static files
+app.use(express.static(__dirname));
+
+//Handle POST request
+app.post('/addComment', function(req, res){
+  //Get the comment from the POST request
+  var comment = req.body.comment;
+  //Get the name from the POST request
+  var name = req.body.name;
+  //Get the current date
+  var date = new Date();
+  //Create an object with the comment info
+  var commentObj = {
+    name: name,
+    comment: comment,
+    date: date
+  };
+  //Get the comments array
+  var comments = require('./comments.json');
+  //Add the new comment to the array
+  comments.push(commentObj);
+  //Save the new comment to the json file
+  var fs = require('fs');
+  fs.writeFile('comments.json', JSON.stringify(comments), function(err){
+    if (err) {
+      console.log(err);
+    }
+    else {
+      console.log('Comment added');
+    }
+  });
+  //Send the response
+  res.send('Comment added');
+});
+
+//Handle GET request
+app.get('/getComments', function(req, res){
+  //Get the comments array
+  var comments = require('./comments.json');
+  //Send the response
+  res.send(comments);
+});
+
+//Start the server
+var server = app.listen(8081, function(){
+  var host = server.address().address;
+  var port = server.address().port;
+  console.log('Listening at http://%s:%s', host, port);
+});
